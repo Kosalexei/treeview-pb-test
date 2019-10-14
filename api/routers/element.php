@@ -18,20 +18,19 @@
 		$treeview = new Treeview( $db );
 
 		// Добавить элемент
-		// POST /directory
+		// POST /element
 		if ( $method === 'POST' && empty( $urlData ) ) {
 			if ( ! $formData ) {
 				return;
 			}
-			var_dump( $formData );
 
 			try {
-				$element_name        = $formData["element_name"];
+				$element_name = $formData["element_name"];
 				$dir_id       = isset( $formData["dir_id"] ) ? $formData["dir_id"] : 0;
-				$dir_description = $formData["dir_description"];
+				$element_type = $formData["element_type"];
 
 				if ( $element_name && (int) $dir_id >= 0 ) {
-					$treeview->add_element( $dir_id, $element_name, $dir_description );
+					var_dump($treeview->add_element( $dir_id, $element_name, $element_type ));
 				}
 			} catch ( Exception $e ) {
 				RequestSender::error( $e->getMessage() );
@@ -41,7 +40,7 @@
 		}
 
 		// Удалить элемент
-		// DELETE /directory
+		// DELETE /element
 		if ( $method === 'DELETE' && empty( $urlData ) ) {
 			if ( ! $formData ) {
 				return;

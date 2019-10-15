@@ -8,7 +8,7 @@
 				return $_GET;
 			}
 
-			if ( $method === 'POST' ) {
+			if ( $method === 'POST' || $method === 'DELETE' ) {
 				$contents = json_decode( file_get_contents( 'php://input' ), true );
 
 				return ! empty( $contents ) ? $contents : $_POST;

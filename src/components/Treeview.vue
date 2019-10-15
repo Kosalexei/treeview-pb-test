@@ -11,7 +11,7 @@
         v-if="parseInt(dirID) !== 0"
       >Добавить элемент</button>
       <button
-        class="treeview__action btn btn-primary"
+        class="treeview__action btn btn-warning"
         @click="editModal = true"
         v-if="selectedID.length === 1"
       >Редактировать</button>
@@ -21,7 +21,7 @@
         @click="deleteDirectory(selectedID, dirID)"
       >Удалить</button>
     </div>
-    {{notObservableFirstSelected}}
+
     <table class="treeview__table">
       <thead class="treeview__table-head">
         <tr>

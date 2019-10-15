@@ -234,11 +234,11 @@ export default {
   },
 
   methods: {
-    addDirectory({ dirName }) {
+    addDirectory({ dirName, dirDescription }) {
       const data = {
         dir_name: dirName,
         parent_id: this.dirID,
-        dir_description: "Desc"
+        dir_description: dirDescription
       };
 
       this.$http({ method: "post", url: "/directory", data })

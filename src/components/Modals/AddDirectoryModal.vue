@@ -15,6 +15,14 @@
             v-model="dirName"
           />
         </div>
+
+        <div class="form-group">
+          <label for="dir-description">Описание</label>
+          <textarea
+            id="dir-description"
+            v-model="dirDescription"
+          ></textarea>
+        </div>
       </form>
     </template>
     <template v-slot:action>
@@ -33,7 +41,17 @@ export default {
   mixins: [modal],
 
   data: () => ({
-    dirName: null
-  })
+    dirName: null,
+    dirDescription: null
+  }),
+
+  watch: {
+    dialog(value) {
+      if (!value) {
+        this.dirName = null;
+        this.dirDescription = null;
+      }
+    }
+  }
 };
 </script>

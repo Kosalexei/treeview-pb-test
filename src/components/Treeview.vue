@@ -11,12 +11,17 @@
         v-if="parseInt(dirID) !== 0"
       >Добавить элемент</button>
       <button
+        class="treeview__action btn btn-primary"
+        @click="editModal = true"
+        v-if="selectedID.length === 1"
+      >Редактировать</button>
+      <button
         class="treeview__action btn btn-danger"
         v-if="selectedID.length > 0"
         @click="deleteDirectory(selectedID, dirID)"
       >Удалить</button>
     </div>
-    {{sortBy}} {{order}}
+    {{notObservableFirstSelected}}
     <table class="treeview__table">
       <thead class="treeview__table-head">
         <tr>
@@ -159,6 +164,47 @@
         >Добавить</button>
       </template>
     </modal>
+
+    <modal
+      v-model="editModal"
+      v-if="selectedID.length === 1"
+      title="Редактировать"
+    >
+      <template v-slot:body>
+        <form
+          @submit.prevent="addDirectory()"
+          class="form"
+        >
+          <div class="form-group">
+            <label for="element-name">Название</label>
+            <input
+              id="element-name"
+              v-model="notObservableFirstSelected.Name"
+            />
+          </div>
+
+          <div
+            class="form-group"
+            v-if="notObservableFirstSelected.Type.ID !== -1"
+          >
+            <label for="element-type">Тип</label>
+            <select v-model="notObservableFirstSelected.Type">
+              <option
+                v-for="(type, index) in types"
+                :key="index"
+                :value="type.ID"
+              >{{type.Name}}</option>
+            </select>
+          </div>
+        </form>
+      </template>
+      <template v-slot:action>
+        <button
+          class="btn btn-primary"
+          @click="updateItem(notObservableFirstSelected)"
+        >Обновить</button>
+      </template>
+    </modal>
   </div>
 </template>
 
@@ -175,6 +221,8 @@ export default {
     addDirectoryModal: false,
 
     addElementModal: false,
+
+    editModal: false,
 
     dirID: 0,
 
@@ -219,6 +267,26 @@ export default {
 
     types: []
   }),
+
+  computed: {
+    /**
+     * Объект без реактивности для внесения изменений.
+     */
+    notObservableFirstSelected() {
+      if (this.selectedID.length > 0) {
+        const idData = this.selectedID[0].split("-");
+        const collection =
+          idData[1] === "element" ? this.elements : this.directories;
+        const obj = find(
+          collection,
+          item => item.advancedId === this.selectedID[0]
+        );
+
+        return JSON.parse(JSON.stringify(obj));
+      }
+      return null;
+    }
+  },
 
   watch: {
     addDirectoryModal(value) {
@@ -362,6 +430,32 @@ export default {
           this.directories = _data.directories;
           this.elements = _data.elements;
           this.addElementModal = false;
+          this.addAdvancedIds(this.directories, "directory");
+          this.addAdvancedIds(this.elements, "element");
+          this.fixTypes(this.directories);
+          this.sortAll();
+        })
+        .catch(e => {
+          console.log(e);
+        });
+    },
+
+    updateItem(item) {
+      const data = {
+        id: item.ID,
+        parent_id: item.ParentID || item.DirectoryID,
+        name: item.Name,
+        type: typeof parseInt(item.Type) === "number" ? item.Type : null,
+        target: item.advancedId.split("-")[1]
+      };
+
+      this.$http({ method: "update", url: "/directory", data })
+        .then(({ data }) => {
+          if (!data.data) return;
+          const _data = data.data;
+          this.directories = _data.directories;
+          this.elements = _data.elements;
+          this.editModal = false;
           this.addAdvancedIds(this.directories, "directory");
           this.addAdvancedIds(this.elements, "element");
           this.fixTypes(this.directories);

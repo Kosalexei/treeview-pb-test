@@ -1,20 +1,19 @@
 <?php
 
-
 	abstract class Rest {
 		public static function getFormData( $method ) {
-			// GET или POST: данные возвращаем как есть
+			// GET: данные возвращаем как есть
 			if ( $method === 'GET' ) {
 				return $_GET;
 			}
 
-			if ( $method === 'POST' || $method === 'DELETE' ) {
+			if ( $method === 'POST' || $method === 'DELETE' || $method === 'UPDATE' ) {
 				$contents = json_decode( file_get_contents( 'php://input' ), true );
 
 				return ! empty( $contents ) ? $contents : $_POST;
 			}
 
-			// PUT, PATCH или DELETE
+			// PUT, PATCH
 			$data     = array();
 			$exploded = explode( '&', file_get_contents( 'php://input' ) );
 

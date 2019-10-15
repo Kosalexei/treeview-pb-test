@@ -31,7 +31,7 @@
 					if($treeview->add_directory( $parent_id, $dir_name, $dir_description )) {
 						RequestSender::success( $treeview->get_node($parent_id) );
 					} else {
-						throw Error( "Не удалось добавить директорию." );
+						throw new Exception( "Не удалось добавить директорию." );
 					}
 				}
 			} catch ( Exception $e ) {
@@ -78,7 +78,33 @@
 				if ($treeview->delete_directories( $directories ) === true && $treeview->delete_elements( $elements ) === true) {
 					RequestSender::success( $treeview->get_node($parent_id) );
 				} else {
-					throw Error( "Не удалось удалить директорию." );
+					throw new Exception( "Не удалось удалить директорию." );
+				}
+			} catch ( Exception $e ) {
+				RequestSender::error( $e->getMessage() );
+			}
+
+			return;
+    }
+    
+    // Обновить элемент
+		// POST /directory
+		if ( $method === 'UPDATE' && empty( $urlData ) ) {
+			if ( ! $formData ) {
+				return;
+      }
+
+			try {
+        $id        = $formData["id"];
+        $parent_id = $formData["parent_id"];
+				$name       = $formData["name"];
+        $type = $formData["type"];
+        $target = $formData["target"];
+
+				if($treeview->update( $id, $name, $type, $target )) {
+					RequestSender::success( $treeview->get_node($parent_id) );
+				} else {
+					throw new Exception( "Не удалось обновить элемент." );
 				}
 			} catch ( Exception $e ) {
 				RequestSender::error( $e->getMessage() );

@@ -32,7 +32,7 @@
 					if($treeview->add_element( $dir_id, $element_name, $element_type )) {
 						RequestSender::success( $treeview->get_node($dir_id) );
 					} else {
-						return new Error( "Не удалось добавить элемент." );
+						return new Exception( "Не удалось добавить элемент." );
 					}
 					
 				}

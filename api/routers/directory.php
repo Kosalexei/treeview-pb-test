@@ -11,8 +11,7 @@
 			return;
 		}
 
-		$db = new Database( getenv( "DB_HOST" ), getenv( "DB_USER" ), getenv( "DB_PASSWORD" ) );
-		$db->select_db( getenv( "DB_NAME" ) );
+    $db = Database::getInstance();
 
 		$treeview = new Treeview( $db );
 

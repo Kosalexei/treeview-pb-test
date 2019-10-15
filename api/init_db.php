@@ -1,7 +1,8 @@
 <?php
 
 	function init_db() {
-		$db = new Database( getenv( "DB_HOST" ), getenv( "DB_USER" ), getenv( "DB_PASSWORD" ) );
+    $db = Database::getInstance();
+		$db->init( getenv( "DB_HOST" ), getenv( "DB_USER" ), getenv( "DB_PASSWORD" ) );
 		$db->select_db( getenv( "DB_NAME" ) );
 
 		if ( ! $db->table_exists( "Directories" ) ) {

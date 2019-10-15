@@ -2,9 +2,22 @@
 
 	class Database {
 		private $mysqli;
-		public $dbname = "";
+    public $dbname = "";
+    private static $instance = null;
 
-		public function __construct( $host, $user, $password ) {
+    public static function getInstance()
+    {
+        if (null === self::$instance)
+        {
+            self::$instance = new self();
+        }
+        return self::$instance;
+    }
+
+    private function __clone() {}
+    private function __construct() {}
+
+		public function init( $host, $user, $password ) {
 			$this->mysqli = new mysqli( $host, $user, $password );
 			$this->mysqli->set_charset( "utf8" );
 

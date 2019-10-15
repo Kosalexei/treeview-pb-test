@@ -1,17 +1,20 @@
 <template>
   <div class="treeview">
     <div class="treeview__actions">
-      <button class="treeview__action" @click="addDirectoryModal = true">Добавить директорию</button>
       <button
-        class="treeview__action"
-        v-if="selectedID.length > 0"
-        @click="deleteDirectory(selectedID, dirID)"
-      >Удалить</button>
+        class="treeview__action btn btn-primary"
+        @click="addDirectoryModal = true"
+      >Добавить директорию</button>
       <button
-        class="treeview__action"
+        class="treeview__action btn btn-primary"
         @click="addElementModal = true"
         v-if="parseInt(dirID) !== 0"
       >Добавить элемент</button>
+      <button
+        class="treeview__action btn btn-danger"
+        v-if="selectedID.length > 0"
+        @click="deleteDirectory(selectedID, dirID)"
+      >Удалить</button>
     </div>
 
     <table class="treeview__table">
@@ -22,7 +25,12 @@
       </thead>
       <tbody class="treeview__table-body">
         <tr class="comeback" v-if="parseInt(dirID) !== 0" @dblclick="getDirectory(parentID)">
-          <td :colspan="headers.length">...</td>
+          <td :colspan="headers.length">
+            <div>
+              <i class="icon icon--left mdi mdi-arrow-left"></i>
+              <span>...</span>
+            </div>
+          </td>
         </tr>
         <tr
           v-for="(directory, rIndex) in directories"
@@ -73,7 +81,7 @@
         </form>
       </template>
       <template v-slot:action>
-        <button @click="addDirectory()">Добавить</button>
+        <button class="btn btn-primary" @click="addDirectory()">Добавить</button>
       </template>
     </modal>
 
@@ -94,7 +102,7 @@
         </form>
       </template>
       <template v-slot:action>
-        <button @click="addElement()">Добавить</button>
+        <button class="btn btn-primary" @click="addElement()">Добавить</button>
       </template>
     </modal>
   </div>
@@ -149,8 +157,27 @@ export default {
 
     directories: [],
 
-    elements: []
+    elements: [],
+
+    types: []
   }),
+
+  watch: {
+    addDirectoryModal(value) {
+      if (!value) {
+        this.dirName = "";
+      }
+    },
+
+    addElementModal(value) {
+      if (value && this.types.length === 0) {
+        this.getTypes();
+      } else {
+        this.elementName = "";
+        this.elementType = 1;
+      }
+    }
+  },
 
   mounted() {
     this.getDirectory(this.dirID);
@@ -192,7 +219,7 @@ export default {
           this.directories = _data.directories;
           this.elements = _data.elements;
           this.addDirectoryModal = false;
-          this.dirName = "";
+
           this.addAdvancedIds(this.directories, "directory");
           this.addAdvancedIds(this.elements, "element");
           this.fixTypes(this.directories);
@@ -275,7 +302,6 @@ export default {
           this.directories = _data.directories;
           this.elements = _data.elements;
           this.addElementModal = false;
-          this.elementName = "";
           this.addAdvancedIds(this.directories, "directory");
           this.addAdvancedIds(this.elements, "element");
           this.fixTypes(this.directories);
@@ -328,19 +354,19 @@ export default {
 
       switch (parseInt(id)) {
         case 1:
-          icon = "mdi-newspaper";
+          icon = "mdi-newspaper color--purple";
           break;
         case 2:
-          icon = "mdi-post-outline";
+          icon = "mdi-post-outline color--grey";
           break;
         case 3:
-          icon = "mdi-message-text-outline";
+          icon = "mdi-message-text-outline color--orange";
           break;
         case 4:
-          icon = "mdi-comment-text-multiple-outline";
+          icon = "mdi-comment-text-multiple-outline color--blue";
           break;
         default:
-          icon = "mdi-folder-outline";
+          icon = "mdi-folder-outline color--yellow";
       }
 
       return icon;

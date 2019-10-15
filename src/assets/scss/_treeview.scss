@@ -1,7 +1,7 @@
 .treeview {
   border: 1px solid #ddd;
   border-radius: 5px;
-  height: 500px;
+  height: 600px;
   width: 100%;
   overflow: hidden;
 
@@ -20,6 +20,7 @@
       width: 100%;
       min-width: 10rem;
       word-wrap: break-word;
+      vertical-align: middle;
     }
 
     &-head {
@@ -32,19 +33,25 @@
       overflow-y: scroll;
       display: block;
       overflow: hidden;
-      max-height: 25rem;
+      max-height: 30.375rem;
       height: 100%;
 
       tr {
         user-select: none;
+        font-size: 0.875rem;
 
         &.comeback {
           display: flex;
+          font-weight: 900;
         }
 
         &.selected {
-          background-color: #494aad;
-          color: white;
+          background-color: #007bff;
+
+          &,
+          i {
+            color: white;
+          }
         }
 
         &:hover {
@@ -53,7 +60,8 @@
       }
     }
 
-    &-body, &-head {
+    &-body,
+    &-head {
       overflow-y: scroll;
     }
 

@@ -102,120 +102,38 @@
       </tbody>
     </table>
 
-    <modal
-      v-model="addDirectoryModal"
+    <add-directory-modal
       title="Добавить директорию"
-    >
-      <template v-slot:body>
-        <form
-          @submit.prevent="addDirectory()"
-          class="form"
-        >
-          <div class="form-group">
-            <label for="dir-name">Название</label>
-            <input
-              id="dir-name"
-              v-model="dirName"
-            />
-          </div>
-        </form>
-      </template>
-      <template v-slot:action>
-        <button
-          class="btn btn-primary"
-          @click="addDirectory()"
-        >Добавить</button>
-      </template>
-    </modal>
+      v-model="addDirectoryModal"
+      @done="addDirectory($event)"
+    ></add-directory-modal>
 
-    <modal
-      v-model="addElementModal"
+    <add-element-modal
       title="Добавить элемент"
-    >
-      <template v-slot:body>
-        <form
-          @submit.prevent="addDirectory()"
-          class="form"
-        >
-          <div class="form-group">
-            <label for="element-name">Название</label>
-            <input
-              id="element-name"
-              v-model="elementName"
-            />
-          </div>
+      v-model="addElementModal"
+      :types="types"
+      @done="addElement($event)"
+    ></add-element-modal>
 
-          <div class="form-group">
-            <label for="element-type">Тип</label>
-            <select v-model="elementType">
-              <option
-                v-for="(type, index) in types"
-                :key="index"
-                :value="type.ID"
-              >{{type.Name}}</option>
-            </select>
-          </div>
-        </form>
-      </template>
-      <template v-slot:action>
-        <button
-          class="btn btn-primary"
-          @click="addElement()"
-        >Добавить</button>
-      </template>
-    </modal>
-
-    <modal
-      v-model="editModal"
-      v-if="selectedID.length === 1"
+    <edit-modal
       title="Редактировать"
-    >
-      <template v-slot:body>
-        <form
-          @submit.prevent="addDirectory()"
-          class="form"
-        >
-          <div class="form-group">
-            <label for="element-name">Название</label>
-            <input
-              id="element-name"
-              v-model="notObservableFirstSelected.Name"
-            />
-          </div>
-
-          <div
-            class="form-group"
-            v-if="notObservableFirstSelected.Type.ID !== -1"
-          >
-            <label for="element-type">Тип</label>
-            <select v-model="notObservableFirstSelected.Type">
-              <option
-                v-for="(type, index) in types"
-                :key="index"
-                :value="type.ID"
-              >{{type.Name}}</option>
-            </select>
-          </div>
-        </form>
-      </template>
-      <template v-slot:action>
-        <button
-          class="btn btn-primary"
-          @click="updateItem(notObservableFirstSelected)"
-        >Обновить</button>
-      </template>
-    </modal>
+      v-if="selectedID.length === 1"
+      v-model="editModal"
+      :types="types"
+      :item="notObservableFirstSelected"
+      @done="updateItem($event)"
+    ></edit-modal>
   </div>
 </template>
 
 <script>
-import Modal from "./Modal";
+import AddDirectoryModal from "./Modals/AddDirectoryModal";
+import AddElementModal from "./Modals/AddElementModal";
+import EditModal from "./Modals/EditModal";
 import { find } from "lodash";
 
 export default {
-  components: { Modal },
-
-  props: {},
+  components: { AddDirectoryModal, AddElementModal, EditModal },
 
   data: () => ({
     addDirectoryModal: false,
@@ -230,11 +148,7 @@ export default {
 
     selectedID: [],
 
-    dirName: "",
-
-    elementName: "",
-
-    elementType: 1,
+    wantMoved: [],
 
     ctrlPressed: false,
 
@@ -298,9 +212,12 @@ export default {
     addElementModal(value) {
       if (value && this.types.length === 0) {
         this.getTypes();
-      } else {
-        this.elementName = "";
-        this.elementType = 1;
+      }
+    },
+
+    editModal(value) {
+      if (value && this.types.length === 0) {
+        this.getTypes();
       }
     }
   },
@@ -309,31 +226,17 @@ export default {
     this.getDirectory(this.dirID);
     this.getTypes();
 
-    document.onkeydown = e => {
-      if (e.ctrlKey) {
-        this.ctrlPressed = e.ctrlKey;
-      }
-    };
-
-    document.onkeyup = e => {
-      if (!e.ctrlKey) this.ctrlPressed = false;
-    };
-
-    document.onmousemove = e => {
-      this.ctrlPressed = e.ctrlKey;
-    };
+    this.setEvents();
   },
 
   beforeDestroy() {
-    document.onkeydown = undefined;
-    document.onkeyup = undefined;
-    document.onmousemove = undefined;
+    this.unsetEvents();
   },
 
   methods: {
-    addDirectory() {
+    addDirectory({ dirName }) {
       const data = {
-        dir_name: this.dirName,
+        dir_name: dirName,
         parent_id: this.dirID,
         dir_description: "Desc"
       };
@@ -342,13 +245,8 @@ export default {
         .then(({ data }) => {
           if (!data.data) return;
           const _data = data.data;
-          this.directories = _data.directories;
-          this.elements = _data.elements;
+          this.updateData(_data);
           this.addDirectoryModal = false;
-          this.addAdvancedIds(this.directories, "directory");
-          this.addAdvancedIds(this.elements, "element");
-          this.fixTypes(this.directories);
-          this.sortAll();
         })
         .catch(e => {
           console.log(e);
@@ -365,12 +263,7 @@ export default {
           const _data = data.data;
           this.selectedID = [];
           this.dirID = _data.dirId;
-          this.directories = _data.directories;
-          this.elements = _data.elements;
-          this.addAdvancedIds(this.directories, "directory");
-          this.addAdvancedIds(this.elements, "element");
-          this.fixTypes(this.directories);
-          this.sortAll();
+          this.updateData(_data);
         })
         .catch(e => {
           console.log(e);
@@ -404,36 +297,26 @@ export default {
           if (!data.data) return;
           const _data = data.data;
           this.selectedID = [];
-          this.directories = _data.directories;
-          this.elements = _data.elements;
-          this.addAdvancedIds(this.directories, "directory");
-          this.addAdvancedIds(this.elements, "element");
-          this.fixTypes(this.directories);
-          this.sortAll();
+          this.updateData(_data);
         })
         .catch(e => {
           console.log(e);
         });
     },
 
-    addElement() {
+    addElement({ elementName, elementType }) {
       const data = {
-        element_name: this.elementName,
+        element_name: elementName,
         dir_id: parseInt(this.dirID),
-        element_type: this.elementType
+        element_type: elementType
       };
 
       this.$http({ method: "post", url: "/element", data })
         .then(({ data }) => {
           if (!data.data) return;
           const _data = data.data;
-          this.directories = _data.directories;
-          this.elements = _data.elements;
+          this.updateData(_data);
           this.addElementModal = false;
-          this.addAdvancedIds(this.directories, "directory");
-          this.addAdvancedIds(this.elements, "element");
-          this.fixTypes(this.directories);
-          this.sortAll();
         })
         .catch(e => {
           console.log(e);
@@ -445,7 +328,11 @@ export default {
         id: item.ID,
         parent_id: item.ParentID || item.DirectoryID,
         name: item.Name,
-        type: typeof parseInt(item.Type) === "number" ? item.Type : null,
+        type:
+          typeof item.Type !== "object" &&
+          typeof parseInt(item.Type) === "number"
+            ? item.Type
+            : null,
         target: item.advancedId.split("-")[1]
       };
 
@@ -453,13 +340,8 @@ export default {
         .then(({ data }) => {
           if (!data.data) return;
           const _data = data.data;
-          this.directories = _data.directories;
-          this.elements = _data.elements;
+          this.updateData(_data);
           this.editModal = false;
-          this.addAdvancedIds(this.directories, "directory");
-          this.addAdvancedIds(this.elements, "element");
-          this.fixTypes(this.directories);
-          this.sortAll();
         })
         .catch(e => {
           console.log(e);
@@ -535,6 +417,15 @@ export default {
       });
     },
 
+    updateData(data) {
+      this.directories = data.directories;
+      this.elements = data.elements;
+      this.addAdvancedIds(this.directories, "directory");
+      this.addAdvancedIds(this.elements, "element");
+      this.fixTypes(this.directories);
+      this.sortAll();
+    },
+
     setSort(value) {
       if (this.sortBy === value) {
         this.order = this.order === "DESC" ? "ASC" : "DESC";
@@ -584,6 +475,28 @@ export default {
 
         return 0;
       });
+    },
+
+    setEvents() {
+      document.onkeydown = e => {
+        if (e.ctrlKey) {
+          this.ctrlPressed = e.ctrlKey;
+        }
+      };
+
+      document.onkeyup = e => {
+        if (!e.ctrlKey) this.ctrlPressed = false;
+      };
+
+      document.onmousemove = e => {
+        this.ctrlPressed = e.ctrlKey;
+      };
+    },
+
+    unsetEvents() {
+      document.onkeydown = undefined;
+      document.onkeyup = undefined;
+      document.onmousemove = undefined;
     }
   }
 };

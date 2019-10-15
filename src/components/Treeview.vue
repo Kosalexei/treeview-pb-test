@@ -16,15 +16,27 @@
         @click="deleteDirectory(selectedID, dirID)"
       >Удалить</button>
     </div>
-
+    {{sortBy}} {{order}}
     <table class="treeview__table">
       <thead class="treeview__table-head">
         <tr>
-          <th v-for="header in headers" :key="header.value">{{header.label}}</th>
+          <th
+            v-for="header in headers"
+            :key="header.value"
+            @click="setSort(header.value)"
+            :class="{'sort-by': sortBy === header.value}"
+          ><span>{{header.label}} <i
+                class="icon icon--left mdi"
+                :class="[sortBy === header.value ? (order === 'DESC' ? 'mdi-menu-down' : 'mdi-menu-up') : '']"
+              ></i></span> </th>
         </tr>
       </thead>
       <tbody class="treeview__table-body">
-        <tr class="comeback" v-if="parseInt(dirID) !== 0" @dblclick="getDirectory(parentID)">
+        <tr
+          class="comeback"
+          v-if="parseInt(dirID) !== 0"
+          @dblclick="getDirectory(parentID)"
+        >
           <td :colspan="headers.length">
             <div>
               <i class="icon icon--left mdi mdi-arrow-left"></i>
@@ -39,14 +51,21 @@
           @click="selectRow(directory.advancedId)"
           :class="{'selected': selectedID.includes(directory.advancedId)}"
         >
-          <td v-for="(header, dIndex) in headers" :key="dIndex">
-            <div class="td-name" v-if="header.value === 'Name'">
-              <i class="icon icon--left mdi" :class="getIcon(directory.Type.ID)"></i>
+          <td
+            v-for="(header, dIndex) in headers"
+            :key="dIndex"
+          >
+            <div
+              class="td-name"
+              v-if="header.value === 'Name'"
+            >
+              <i
+                class="icon icon--left mdi"
+                :class="getIcon(directory.Type.ID)"
+              ></i>
               <span>{{header.value ? directory[header.value] : null}}</span>
             </div>
-            <span
-              v-else-if="header.value === 'Type'"
-            >{{header.value ? directory[header.value].Name : null}}</span>
+            <span v-else-if="header.value === 'Type'">{{header.value ? directory[header.value].Name : null}}</span>
             <span v-else>{{header.value ? directory[header.value] : null}}</span>
           </td>
         </tr>
@@ -57,52 +76,87 @@
           @click="selectRow(element.advancedId)"
           :class="{'selected': selectedID.includes(element.advancedId)}"
         >
-          <td v-for="(header, dIndex) in headers" :key="dIndex">
-            <div class="td-name" v-if="header.value === 'Name'">
-              <i class="icon icon--left mdi" :class="getIcon(element.Type)"></i>
+          <td
+            v-for="(header, dIndex) in headers"
+            :key="dIndex"
+          >
+            <div
+              class="td-name"
+              v-if="header.value === 'Name'"
+            >
+              <i
+                class="icon icon--left mdi"
+                :class="getIcon(element.Type)"
+              ></i>
               <span>{{header.value ? element[header.value] : null}}</span>
             </div>
-            <span
-              v-else-if="header.value === 'Type'"
-            >{{getType(element[header.value]) ? getType(element[header.value]).Name : null}}</span>
+            <span v-else-if="header.value === 'Type'">{{getType(element[header.value]) ? getType(element[header.value]).Name : null}}</span>
             <span v-else>{{header.value ? element[header.value] : null}}</span>
           </td>
         </tr>
       </tbody>
     </table>
 
-    <modal v-model="addDirectoryModal" title="Добавить директорию">
+    <modal
+      v-model="addDirectoryModal"
+      title="Добавить директорию"
+    >
       <template v-slot:body>
-        <form @submit.prevent="addDirectory()">
+        <form
+          @submit.prevent="addDirectory()"
+          class="form"
+        >
           <div class="form-group">
             <label for="dir-name">Название</label>
-            <input id="dir-name" v-model="dirName" />
+            <input
+              id="dir-name"
+              v-model="dirName"
+            />
           </div>
         </form>
       </template>
       <template v-slot:action>
-        <button class="btn btn-primary" @click="addDirectory()">Добавить</button>
+        <button
+          class="btn btn-primary"
+          @click="addDirectory()"
+        >Добавить</button>
       </template>
     </modal>
 
-    <modal v-model="addElementModal" title="Добавить элемент">
+    <modal
+      v-model="addElementModal"
+      title="Добавить элемент"
+    >
       <template v-slot:body>
-        <form @submit.prevent="addDirectory()">
+        <form
+          @submit.prevent="addDirectory()"
+          class="form"
+        >
           <div class="form-group">
             <label for="element-name">Название</label>
-            <input id="element-name" v-model="elementName" />
+            <input
+              id="element-name"
+              v-model="elementName"
+            />
           </div>
 
           <div class="form-group">
             <label for="element-type">Тип</label>
             <select v-model="elementType">
-              <option v-for="(type, index) in types" :key="index" :value="type.ID">{{type.Name}}</option>
+              <option
+                v-for="(type, index) in types"
+                :key="index"
+                :value="type.ID"
+              >{{type.Name}}</option>
             </select>
           </div>
         </form>
       </template>
       <template v-slot:action>
-        <button class="btn btn-primary" @click="addElement()">Добавить</button>
+        <button
+          class="btn btn-primary"
+          @click="addElement()"
+        >Добавить</button>
       </template>
     </modal>
   </div>
@@ -135,6 +189,10 @@ export default {
     elementType: 1,
 
     ctrlPressed: false,
+
+    sortBy: null,
+
+    order: "DESC",
 
     headers: [
       {
@@ -219,10 +277,10 @@ export default {
           this.directories = _data.directories;
           this.elements = _data.elements;
           this.addDirectoryModal = false;
-
           this.addAdvancedIds(this.directories, "directory");
           this.addAdvancedIds(this.elements, "element");
           this.fixTypes(this.directories);
+          this.sortAll();
         })
         .catch(e => {
           console.log(e);
@@ -244,6 +302,7 @@ export default {
           this.addAdvancedIds(this.directories, "directory");
           this.addAdvancedIds(this.elements, "element");
           this.fixTypes(this.directories);
+          this.sortAll();
         })
         .catch(e => {
           console.log(e);
@@ -282,6 +341,7 @@ export default {
           this.addAdvancedIds(this.directories, "directory");
           this.addAdvancedIds(this.elements, "element");
           this.fixTypes(this.directories);
+          this.sortAll();
         })
         .catch(e => {
           console.log(e);
@@ -305,6 +365,7 @@ export default {
           this.addAdvancedIds(this.directories, "directory");
           this.addAdvancedIds(this.elements, "element");
           this.fixTypes(this.directories);
+          this.sortAll();
         })
         .catch(e => {
           console.log(e);
@@ -377,6 +438,57 @@ export default {
         if (!item.hasOwnProperty("advancedId")) {
           item.advancedId = `${item.ID}-${postfix}`;
         }
+      });
+    },
+
+    setSort(value) {
+      if (this.sortBy === value) {
+        this.order = this.order === "DESC" ? "ASC" : "DESC";
+      } else {
+        this.sortBy = value;
+        this.order = "DESC";
+      }
+
+      this.sortAll();
+    },
+
+    sortAll() {
+      if (this.sortBy) {
+        this.sortItems(this.directories, this.sortBy, this.order);
+        this.sortItems(this.elements, this.sortBy, this.order);
+      }
+    },
+
+    sortItems(items, sortBy, order) {
+      items.sort((a, b) => {
+        // Удаляем реактивность
+        a = JSON.parse(JSON.stringify(a));
+        b = JSON.parse(JSON.stringify(b));
+
+        if (typeof a[sortBy] === "string" && typeof b[sortBy] === "string") {
+          a[sortBy] = a[sortBy].toUpperCase();
+          b[sortBy] = b[sortBy].toUpperCase();
+
+          // return a[sortBy].localeCompare(b[sortBy]);
+        }
+
+        if (order === "ASC") {
+          if (a[sortBy] < b[sortBy]) {
+            return -1;
+          }
+          if (a[sortBy] > b[sortBy]) {
+            return 1;
+          }
+        } else {
+          if (b[sortBy] < a[sortBy]) {
+            return -1;
+          }
+          if (b[sortBy] > a[sortBy]) {
+            return 1;
+          }
+        }
+
+        return 0;
       });
     }
   }

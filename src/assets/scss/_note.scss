@@ -1,0 +1,15 @@
+.note {
+  padding: 1.25rem;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  margin-top: 2rem;
+
+  &__title {
+    font-weight: 700;
+    font-size: 1.125rem;
+  }
+
+  &__row {
+    margin-top: 1rem;
+  }
+}

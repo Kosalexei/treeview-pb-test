@@ -27,6 +27,21 @@
       flex: 0 0 auto;
       display: block;
       overflow: hidden;
+
+      tr {
+        user-select: none;
+        cursor: pointer;
+
+        i {
+          font-size: 1rem;
+        }
+      }
+
+      th {
+        &.sort-by {
+          background: #ddd;
+        }
+      }
     }
 
     &-body {

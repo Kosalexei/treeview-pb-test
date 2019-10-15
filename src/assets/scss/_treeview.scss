@@ -1,14 +1,11 @@
 .treeview {
-  border: 1px solid #efefef;
+  border: 1px solid #ddd;
   border-radius: 5px;
   height: 500px;
   width: 100%;
   overflow: hidden;
 
   &__table {
-    display: flex;
-    flex-direction: column;
-    flex: 1 1 auto;
     width: 100%;
     height: 100%;
     border-collapse: collapse;
@@ -22,17 +19,10 @@
       border: 1px solid #ddd;
       width: 100%;
       min-width: 10rem;
-    //   max-width: 10em;
-      overflow: hidden;
       word-wrap: break-word;
     }
 
-    tr {
-        
-    }
-
     &-head {
-      border-bottom: 1px solid #efefef;
       flex: 0 0 auto;
       display: block;
       overflow: hidden;
@@ -41,8 +31,43 @@
     &-body {
       overflow-y: scroll;
       display: block;
-      flex: 1 1 auto;
       overflow: hidden;
+      max-height: 25rem;
+      height: 100%;
+
+      tr {
+        user-select: none;
+
+        &.comeback {
+          display: flex;
+        }
+
+        &.selected {
+          background-color: #494aad;
+          color: white;
+        }
+
+        &:hover {
+          cursor: pointer;
+        }
+      }
+    }
+
+    &-body, &-head {
+      overflow-y: scroll;
+    }
+
+    .td-name {
+      display: flex;
+      align-items: center;
+    }
+  }
+
+  &__actions {
+    padding: 1.25rem;
+
+    .treeview__action {
+      margin-right: 0.625rem;
     }
   }
 }

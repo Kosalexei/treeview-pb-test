@@ -1,112 +1,358 @@
 <template>
   <div class="treeview">
     <div class="treeview__actions">
-      <button @click="addDirectoryModal = true">Добавить директорию</button>
+      <button class="treeview__action" @click="addDirectoryModal = true">Добавить директорию</button>
+      <button
+        class="treeview__action"
+        v-if="selectedID.length > 0"
+        @click="deleteDirectory(selectedID, dirID)"
+      >Удалить</button>
+      <button
+        class="treeview__action"
+        @click="addElementModal = true"
+        v-if="parseInt(dirID) !== 0"
+      >Добавить элемент</button>
     </div>
 
     <table class="treeview__table">
       <thead class="treeview__table-head">
-      <tr>
-        <th v-for="header in headers" :key="header.value">{{header.label}}</th>
-      </tr>
+        <tr>
+          <th v-for="header in headers" :key="header.value">{{header.label}}</th>
+        </tr>
       </thead>
       <tbody class="treeview__table-body">
-      <tr v-if="parseInt(dirId) !== 0" @click="getDirectory(parentID)">
-        <td>...</td>
-      </tr>
-      <tr v-for="(item, rIndex) in items" :key="rIndex" @click="getDirectory(item.ID, item.ParentID)">
-        <td v-for="(header, dIndex) in headers" :key="dIndex">{{header.value ? item[header.value] : null}}</td>
-      </tr>
+        <tr class="comeback" v-if="parseInt(dirID) !== 0" @dblclick="getDirectory(parentID)">
+          <td :colspan="headers.length">...</td>
+        </tr>
+        <tr
+          v-for="(directory, rIndex) in directories"
+          :key="`${rIndex}-directory`"
+          @dblclick="!ctrlPressed ? getDirectory(directory.ID, directory.ParentID) : () => {}"
+          @click="selectRow(directory.advancedId)"
+          :class="{'selected': selectedID.includes(directory.advancedId)}"
+        >
+          <td v-for="(header, dIndex) in headers" :key="dIndex">
+            <div class="td-name" v-if="header.value === 'Name'">
+              <i class="icon icon--left mdi" :class="getIcon(directory.Type.ID)"></i>
+              <span>{{header.value ? directory[header.value] : null}}</span>
+            </div>
+            <span
+              v-else-if="header.value === 'Type'"
+            >{{header.value ? directory[header.value].Name : null}}</span>
+            <span v-else>{{header.value ? directory[header.value] : null}}</span>
+          </td>
+        </tr>
+
+        <tr
+          v-for="(element, rIndex) in elements"
+          :key="`${rIndex}-element`"
+          @click="selectRow(element.advancedId)"
+          :class="{'selected': selectedID.includes(element.advancedId)}"
+        >
+          <td v-for="(header, dIndex) in headers" :key="dIndex">
+            <div class="td-name" v-if="header.value === 'Name'">
+              <i class="icon icon--left mdi" :class="getIcon(element.Type)"></i>
+              <span>{{header.value ? element[header.value] : null}}</span>
+            </div>
+            <span
+              v-else-if="header.value === 'Type'"
+            >{{getType(element[header.value]) ? getType(element[header.value]).Name : null}}</span>
+            <span v-else>{{header.value ? element[header.value] : null}}</span>
+          </td>
+        </tr>
       </tbody>
     </table>
 
     <modal v-model="addDirectoryModal" title="Добавить директорию">
       <template v-slot:body>
         <form @submit.prevent="addDirectory()">
-          <label for="dir-name"></label>
-          <input id="dir-name" v-model="dirName">
+          <div class="form-group">
+            <label for="dir-name">Название</label>
+            <input id="dir-name" v-model="dirName" />
+          </div>
         </form>
       </template>
       <template v-slot:action>
         <button @click="addDirectory()">Добавить</button>
       </template>
     </modal>
+
+    <modal v-model="addElementModal" title="Добавить элемент">
+      <template v-slot:body>
+        <form @submit.prevent="addDirectory()">
+          <div class="form-group">
+            <label for="element-name">Название</label>
+            <input id="element-name" v-model="elementName" />
+          </div>
+
+          <div class="form-group">
+            <label for="element-type">Тип</label>
+            <select v-model="elementType">
+              <option v-for="(type, index) in types" :key="index" :value="type.ID">{{type.Name}}</option>
+            </select>
+          </div>
+        </form>
+      </template>
+      <template v-slot:action>
+        <button @click="addElement()">Добавить</button>
+      </template>
+    </modal>
   </div>
 </template>
 
 <script>
-    import Modal from "./Modal";
+import Modal from "./Modal";
+import { find } from "lodash";
 
-    export default {
-        components: {Modal},
+export default {
+  components: { Modal },
 
-        props: {},
+  props: {},
 
-        data: () => ({
-            addDirectoryModal: false,
+  data: () => ({
+    addDirectoryModal: false,
 
-            dirId: 0,
+    addElementModal: false,
 
-            parentID: 0,
+    dirID: 0,
 
-            dirName: "",
+    parentID: 0,
 
-            headers: [
-                {
-                    label: "Наименование",
-                    value: "Name"
-                },
-                {
-                    label: "Тип",
-                    value: "Type"
-                },
-                {
-                    label: "Дата создания",
-                    value: "Created"
-                },
-                {
-                    label: "Дата изменения",
-                    value: "Modified"
-                }
-            ],
+    selectedID: [],
 
-            items: []
-        }),
+    dirName: "",
 
-        mounted() {
-            this.getDirectory(this.dirId);
-        },
+    elementName: "",
 
-        methods: {
-            addDirectory() {
-                const data = {dir_name: this.dirName, parent_id: this.dirId, dir_description: "Desc"};
+    elementType: 1,
 
-                this.$http({method: "post", url: "/directory", data}).then(({data}) => {
-                    if (!data.data) return;
-                    const _data = data.data;
-                    this.items = _data.items;
-                    this.dirId = _data.dirId;
-                    this.addDirectoryModal = false;
-                    this.dirName = "";
-                }).catch(e => {
-                    console.log(e)
-                })
-            },
+    ctrlPressed: false,
 
-            getDirectory(id, prarentID) {
-                const params = {parent_id: id};
-                this.parentID = prarentID;
+    headers: [
+      {
+        label: "Наименование",
+        value: "Name"
+      },
+      {
+        label: "Тип",
+        value: "Type"
+      },
+      {
+        label: "Дата создания",
+        value: "Created"
+      },
+      {
+        label: "Дата изменения",
+        value: "Modified"
+      }
+    ],
 
-                this.$http({method: "get", url: "/directory", params}).then(({data}) => {
-                    if (!data.data) return;
-                    const _data = data.data;
-                    this.dirId = _data.dirId;
-                    this.items = _data.items;
+    directories: [],
 
-                }).catch(e => {
-                    console.log(e)
-                })
-            }
-        }
+    elements: []
+  }),
+
+  mounted() {
+    this.getDirectory(this.dirID);
+    this.getTypes();
+
+    document.onkeydown = e => {
+      if (e.ctrlKey) {
+        this.ctrlPressed = e.ctrlKey;
+      }
     };
+
+    document.onkeyup = e => {
+      if (!e.ctrlKey) this.ctrlPressed = false;
+    };
+
+    document.onmousemove = e => {
+      this.ctrlPressed = e.ctrlKey;
+    };
+  },
+
+  beforeDestroy() {
+    document.onkeydown = undefined;
+    document.onkeyup = undefined;
+    document.onmousemove = undefined;
+  },
+
+  methods: {
+    addDirectory() {
+      const data = {
+        dir_name: this.dirName,
+        parent_id: this.dirID,
+        dir_description: "Desc"
+      };
+
+      this.$http({ method: "post", url: "/directory", data })
+        .then(({ data }) => {
+          if (!data.data) return;
+          const _data = data.data;
+          this.directories = _data.directories;
+          this.elements = _data.elements;
+          this.addDirectoryModal = false;
+          this.dirName = "";
+          this.addAdvancedIds(this.directories, "directory");
+          this.addAdvancedIds(this.elements, "element");
+          this.fixTypes(this.directories);
+        })
+        .catch(e => {
+          console.log(e);
+        });
+    },
+
+    getDirectory(id, prarentID) {
+      const params = { parent_id: id };
+      this.parentID = prarentID;
+
+      this.$http({ method: "get", url: "/directory", params })
+        .then(({ data }) => {
+          if (!data.data) return;
+          const _data = data.data;
+          this.selectedID = [];
+          this.dirID = _data.dirId;
+          this.directories = _data.directories;
+          this.elements = _data.elements;
+          this.addAdvancedIds(this.directories, "directory");
+          this.addAdvancedIds(this.elements, "element");
+          this.fixTypes(this.directories);
+        })
+        .catch(e => {
+          console.log(e);
+        });
+    },
+
+    deleteDirectory(ids, parent_id) {
+      let idsAdvanced = {};
+      ids.forEach(id => {
+        const idData = id.split("-");
+
+        if (idData.length === 2) {
+          const _id = idData[0];
+          const _type = idData[1];
+
+          if (!idsAdvanced.hasOwnProperty(_type)) {
+            idsAdvanced[_type] = [_id];
+          } else {
+            idsAdvanced[_type].push(_id);
+          }
+        }
+      });
+      const data = { ids: idsAdvanced, parent_id };
+
+      this.$http({
+        method: "delete",
+        url: "/directory",
+        data
+      })
+        .then(({ data }) => {
+          if (!data.data) return;
+          const _data = data.data;
+          this.selectedID = [];
+          this.directories = _data.directories;
+          this.elements = _data.elements;
+          this.addAdvancedIds(this.directories, "directory");
+          this.addAdvancedIds(this.elements, "element");
+          this.fixTypes(this.directories);
+        })
+        .catch(e => {
+          console.log(e);
+        });
+    },
+
+    addElement() {
+      const data = {
+        element_name: this.elementName,
+        dir_id: parseInt(this.dirID),
+        element_type: this.elementType
+      };
+
+      this.$http({ method: "post", url: "/element", data })
+        .then(({ data }) => {
+          if (!data.data) return;
+          const _data = data.data;
+          this.directories = _data.directories;
+          this.elements = _data.elements;
+          this.addElementModal = false;
+          this.elementName = "";
+          this.addAdvancedIds(this.directories, "directory");
+          this.addAdvancedIds(this.elements, "element");
+          this.fixTypes(this.directories);
+        })
+        .catch(e => {
+          console.log(e);
+        });
+    },
+
+    getTypes() {
+      this.$http({ method: "get", url: "/types" })
+        .then(({ data }) => {
+          if (!data.data) return;
+          const _data = data.data;
+
+          this.types = _data.items;
+        })
+        .catch(e => {
+          console.log(e);
+        });
+    },
+
+    selectRow(id) {
+      if (!this.ctrlPressed) this.selectedID = [id];
+      else {
+        if (this.selectedID.includes(id)) {
+          const index = this.selectedID.indexOf(id);
+
+          this.selectedID.splice(index, 1);
+        } else {
+          this.selectedID.push(id);
+        }
+      }
+    },
+
+    fixTypes(items) {
+      items.forEach(item => {
+        if (!item.hasOwnProperty("Type")) {
+          item.Type = { ID: -1, Name: "Папка с файлами" };
+        }
+      });
+    },
+
+    getType(id) {
+      return find(this.types, type => type.ID === id);
+    },
+
+    getIcon(id) {
+      let icon = "";
+
+      switch (parseInt(id)) {
+        case 1:
+          icon = "mdi-newspaper";
+          break;
+        case 2:
+          icon = "mdi-post-outline";
+          break;
+        case 3:
+          icon = "mdi-message-text-outline";
+          break;
+        case 4:
+          icon = "mdi-comment-text-multiple-outline";
+          break;
+        default:
+          icon = "mdi-folder-outline";
+      }
+
+      return icon;
+    },
+
+    addAdvancedIds(items, postfix) {
+      items.forEach(item => {
+        if (!item.hasOwnProperty("advancedId")) {
+          item.advancedId = `${item.ID}-${postfix}`;
+        }
+      });
+    }
+  }
+};
 </script>

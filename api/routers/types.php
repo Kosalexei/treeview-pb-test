@@ -1,6 +1,5 @@
 <?php
 
-
 	/**
 	 * @param string $method Метод запроса.
 	 * @param array $urlData Параметры URL.
@@ -17,25 +16,20 @@
 
 		$treeview = new Treeview( $db );
 
-		// Добавить элемент
-		// POST /element
-		if ( $method === 'POST' && empty( $urlData ) ) {
+		// Получить типы
+		// GET /types
+		if ( $method === 'GET' && empty( $urlData ) ) {
 			if ( ! $formData ) {
 				return;
 			}
 
 			try {
-				$element_name = $formData["element_name"];
-				$dir_id       = isset( $formData["dir_id"] ) ? $formData["dir_id"] : 0;
-				$element_type = $formData["element_type"];
+				$parent_id = isset( $formData["parent_id"] ) ? $formData["parent_id"] : 0;
 
-				if ( $element_name && (int) $dir_id >= 0 ) {
-					if($treeview->add_element( $dir_id, $element_name, $element_type )) {
-						RequestSender::success( $treeview->get_node($dir_id) );
-					} else {
-						return new Error( "Не удалось добавить элемент." );
-					}
-					
+				if ( (int) $parent_id >= 0 ) {
+					RequestSender::success( [
+						"items" => $treeview->get_types()
+					] );
 				}
 			} catch ( Exception $e ) {
 				RequestSender::error( $e->getMessage() );

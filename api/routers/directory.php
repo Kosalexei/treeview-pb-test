@@ -29,10 +29,11 @@
 				$dir_description = $formData["dir_description"];
 
 				if ( $dir_name && (int) $parent_id >= 0 ) {
-					RequestSender::success( [
-						"dirId" => $parent_id,
-						"items" => $treeview->add_directory( $parent_id, $dir_name, $dir_description )
-					] );
+					if($treeview->add_directory( $parent_id, $dir_name, $dir_description )) {
+						RequestSender::success( $treeview->get_node($parent_id) );
+					} else {
+						throw Error( "Не удалось добавить директорию." );
+					}
 				}
 			} catch ( Exception $e ) {
 				RequestSender::error( $e->getMessage() );
@@ -41,7 +42,7 @@
 			return;
 		}
 
-		// Добавить директорию
+		// Получить директорию
 		// GET /directory
 		if ( $method === 'GET' && empty( $urlData ) ) {
 			if ( ! $formData ) {
@@ -52,10 +53,7 @@
 				$parent_id = isset( $formData["parent_id"] ) ? $formData["parent_id"] : 0;
 
 				if ( (int) $parent_id >= 0 ) {
-					RequestSender::success( [
-						"dirId" => $parent_id,
-						"items" => $treeview->getNode( $parent_id )
-					] );
+					RequestSender::success( $treeview->get_node($parent_id) );
 				}
 			} catch ( Exception $e ) {
 				RequestSender::error( $e->getMessage() );
@@ -72,9 +70,17 @@
 			}
 
 			try {
-				$dir_id = $formData["dir_id"];
+				$ids = $formData["ids"];
+				$parent_id = $formData["parent_id"];
 
-				$treeview->delete_directory( $dir_id );
+				$directories = isset($ids["directory"]) ? $ids["directory"] : [];
+				$elements = isset($ids["element"]) ? $ids["element"] : [];
+
+				if ($treeview->delete_directories( $directories ) === true && $treeview->delete_elements( $elements ) === true) {
+					RequestSender::success( $treeview->get_node($parent_id) );
+				} else {
+					throw Error( "Не удалось удалить директорию." );
+				}
 			} catch ( Exception $e ) {
 				RequestSender::error( $e->getMessage() );
 			}

@@ -1,0 +1,18 @@
+.icon {
+  align-items: center;
+  display: -webkit-inline-box;
+  display: -ms-inline-flexbox;
+  display: inline-flex;
+  font-feature-settings: "liga";
+  font-size: 1.5rem;
+  justify-content: center;
+  letter-spacing: normal;
+  line-height: 1;
+  text-indent: 0;
+  vertical-align: middle;
+  user-select: none;
+
+  &--left {
+    margin-right: 0.625rem;
+  }
+}

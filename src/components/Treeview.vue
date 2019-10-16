@@ -15,10 +15,11 @@
         @click="editModal = true"
         v-if="selectedID.length === 1"
       >Редактировать</button>
+
       <button
         class="treeview__action btn btn-danger"
         v-if="selectedID.length > 0"
-        @click="deleteDirectory(selectedID, dirID)"
+        @click="deleteItems(dirID)"
       >Удалить</button>
     </div>
 
@@ -30,18 +31,19 @@
             :key="header.value"
             @click="setSort(header.value)"
             :class="{'sort-by': sortBy === header.value}"
-          ><span>{{header.label}} <i
+          >
+            <span>
+              {{header.label}}
+              <i
                 class="icon icon--left mdi"
                 :class="[sortBy === header.value ? (order === 'DESC' ? 'mdi-menu-down' : 'mdi-menu-up') : '']"
-              ></i></span> </th>
+              ></i>
+            </span>
+          </th>
         </tr>
       </thead>
       <tbody class="treeview__table-body">
-        <tr
-          class="comeback"
-          v-if="parseInt(dirID) !== 0"
-          @dblclick="getDirectory(parentID)"
-        >
+        <tr class="comeback" v-if="parseInt(dirID) !== 0" @dblclick="getDirectory(parentID)">
           <td :colspan="headers.length">
             <div>
               <i class="icon icon--left mdi mdi-arrow-left"></i>
@@ -54,23 +56,17 @@
           :key="`${rIndex}-directory`"
           @dblclick="!ctrlPressed ? getDirectory(directory.ID, directory.ParentID) : () => {}"
           @click="selectRow(directory.advancedId)"
-          :class="{'selected': selectedID.includes(directory.advancedId)}"
+          :class="{'selected': selectedID.includes(directory.advancedId), 'want-move': wantMove.includes(directory.advancedId)}"
         >
-          <td
-            v-for="(header, dIndex) in headers"
-            :key="dIndex"
-          >
-            <div
-              class="td-name"
-              v-if="header.value === 'Name'"
-            >
-              <i
-                class="icon icon--left mdi"
-                :class="getIcon(directory.Type.ID)"
-              ></i>
+          <td v-for="(header, dIndex) in headers" :key="dIndex">
+            <span v-if="header.date">{{header.value ? moment(directory[header.value]) : null}}</span>
+            <div class="td-name" v-else-if="header.value === 'Name'">
+              <i class="icon icon--left mdi" :class="getIcon(directory.Type.ID)"></i>
               <span>{{header.value ? directory[header.value] : null}}</span>
             </div>
-            <span v-else-if="header.value === 'Type'">{{header.value ? directory[header.value].Name : null}}</span>
+            <span
+              v-else-if="header.value === 'Type'"
+            >{{header.value ? directory[header.value].Name : null}}</span>
             <span v-else>{{header.value ? directory[header.value] : null}}</span>
           </td>
         </tr>
@@ -79,23 +75,16 @@
           v-for="(element, rIndex) in elements"
           :key="`${rIndex}-element`"
           @click="selectRow(element.advancedId)"
-          :class="{'selected': selectedID.includes(element.advancedId)}"
+          :class="{'selected': selectedID.includes(element.advancedId), 'want-move': wantMove.includes(element.advancedId)}"
         >
-          <td
-            v-for="(header, dIndex) in headers"
-            :key="dIndex"
-          >
-            <div
-              class="td-name"
-              v-if="header.value === 'Name'"
-            >
-              <i
-                class="icon icon--left mdi"
-                :class="getIcon(element.Type)"
-              ></i>
+          <td v-for="(header, dIndex) in headers" :key="dIndex">
+            <div class="td-name" v-if="header.value === 'Name'">
+              <i class="icon icon--left mdi" :class="getIcon(element.Type)"></i>
               <span>{{header.value ? element[header.value] : null}}</span>
             </div>
-            <span v-else-if="header.value === 'Type'">{{getType(element[header.value]) ? getType(element[header.value]).Name : null}}</span>
+            <span
+              v-else-if="header.value === 'Type'"
+            >{{getType(element[header.value]) ? getType(element[header.value]).Name : null}}</span>
             <span v-else>{{header.value ? element[header.value] : null}}</span>
           </td>
         </tr>
@@ -130,7 +119,8 @@
 import AddDirectoryModal from "./Modals/AddDirectoryModal";
 import AddElementModal from "./Modals/AddElementModal";
 import EditModal from "./Modals/EditModal";
-import { find } from "lodash";
+import { find, xor } from "lodash";
+import moment from "moment";
 
 export default {
   components: { AddDirectoryModal, AddElementModal, EditModal },
@@ -148,7 +138,9 @@ export default {
 
     selectedID: [],
 
-    wantMoved: [],
+    wantMove: [],
+
+    moveFrom: null,
 
     ctrlPressed: false,
 
@@ -167,11 +159,13 @@ export default {
       },
       {
         label: "Дата создания",
-        value: "Created"
+        value: "Created",
+        date: true
       },
       {
         label: "Дата изменения",
-        value: "Modified"
+        value: "Modified",
+        date: true
       }
     ],
 
@@ -204,7 +198,10 @@ export default {
 
   watch: {
     addDirectoryModal(value) {
-      if (!value) {
+      if (value) {
+        this.unsetEvents();
+      } else {
+        this.setEvents();
         this.dirName = "";
       }
     },
@@ -213,11 +210,23 @@ export default {
       if (value && this.types.length === 0) {
         this.getTypes();
       }
+
+      if (value) {
+        this.unsetEvents();
+      } else {
+        this.setEvents();
+      }
     },
 
     editModal(value) {
       if (value && this.types.length === 0) {
         this.getTypes();
+      }
+
+      if (value) {
+        this.unsetEvents();
+      } else {
+        this.setEvents();
       }
     }
   },
@@ -270,22 +279,8 @@ export default {
         });
     },
 
-    deleteDirectory(ids, parent_id) {
-      let idsAdvanced = {};
-      ids.forEach(id => {
-        const idData = id.split("-");
-
-        if (idData.length === 2) {
-          const _id = idData[0];
-          const _type = idData[1];
-
-          if (!idsAdvanced.hasOwnProperty(_type)) {
-            idsAdvanced[_type] = [_id];
-          } else {
-            idsAdvanced[_type].push(_id);
-          }
-        }
-      });
+    deleteItems(parent_id) {
+      const idsAdvanced = this.parseIdsAdvanced(this.selectedID);
       const data = { ids: idsAdvanced, parent_id };
 
       this.$http({
@@ -325,15 +320,17 @@ export default {
 
     updateItem(item) {
       const data = {
-        id: item.ID,
-        parent_id: item.ParentID || item.DirectoryID,
-        name: item.Name,
-        type:
+        ids: [item.ID],
+        currentDirID: item.ParentID || item.DirectoryID,
+        Name: item.Name,
+        Type:
           typeof item.Type !== "object" &&
           typeof parseInt(item.Type) === "number"
             ? item.Type
             : null,
-        target: item.advancedId.split("-")[1]
+        target: item.advancedId.split("-")[1],
+        fields: ["Name", "Type"],
+        modified: true
       };
 
       this.$http({ method: "update", url: "/directory", data })
@@ -346,6 +343,44 @@ export default {
         .catch(e => {
           console.log(e);
         });
+    },
+
+    moveItem(fromId, ids, toId, target) {
+      const data = {
+        ids: ids,
+        currentDirID: toId,
+        ParentID: toId,
+        DirectoryID: toId,
+        target: target,
+        fields: ["ParentID", "DirectoryID"],
+        modified: false
+      };
+
+      this.$http({ method: "update", url: "/directory", data })
+        .then(({ data }) => {
+          if (!data.data) return;
+          const _data = data.data;
+          this.wantMove = [];
+          this.updateData(_data);
+        })
+        .catch(e => {
+          console.log(e);
+        });
+    },
+
+    moveAll() {
+      if (this.wantMove.length === 0 || this.moveFrom === null) return;
+
+      if (this.moveFrom === this.dirID) {
+        this.wantMove = [];
+        return;
+      }
+
+      const idsAdvanced = this.parseIdsAdvanced(this.wantMove);
+
+      for (let target in idsAdvanced) {
+        this.moveItem(this.moveFrom, idsAdvanced[target], this.dirID, target);
+      }
     },
 
     getTypes() {
@@ -453,8 +488,6 @@ export default {
         if (typeof a[sortBy] === "string" && typeof b[sortBy] === "string") {
           a[sortBy] = a[sortBy].toUpperCase();
           b[sortBy] = b[sortBy].toUpperCase();
-
-          // return a[sortBy].localeCompare(b[sortBy]);
         }
 
         if (order === "ASC") {
@@ -477,10 +510,66 @@ export default {
       });
     },
 
+    addWantMove(items) {
+      if (this.moveFrom === null) {
+        this.moveFrom = this.dirID;
+      }
+
+      if (this.moveFrom !== this.dirID) {
+        this.wantMove = [];
+        this.moveFrom = this.dirID;
+      }
+
+      const xorItems = xor(this.wantMove.concat(items), this.wantMove);
+
+      this.wantMove = this.wantMove.concat(xorItems);
+    },
+
+    parseIdsAdvanced(ids) {
+      let idsAdvanced = {};
+
+      ids.forEach(id => {
+        const idData = id.split("-");
+
+        if (idData.length === 2) {
+          const _id = idData[0];
+          const _type = idData[1];
+
+          if (!idsAdvanced.hasOwnProperty(_type)) {
+            idsAdvanced[_type] = [_id];
+          } else {
+            idsAdvanced[_type].push(_id);
+          }
+        }
+      });
+
+      return idsAdvanced;
+    },
+
+    moment(value, format = "DD.MM.YYYY HH:mm") {
+      return moment(value, "YYYY-MM-DD HH:mm").format(format);
+    },
+
     setEvents() {
       document.onkeydown = e => {
         if (e.ctrlKey) {
           this.ctrlPressed = e.ctrlKey;
+
+          if (e.keyCode === 88) {
+            e.preventDefault();
+            this.addWantMove(this.selectedID);
+          }
+
+          if (e.keyCode === 86) {
+            e.preventDefault();
+            this.moveAll();
+          }
+        }
+
+        if (e.keyCode === 27) {
+          this.selectedID = [];
+          this.wantMove = [];
+          this.moveFrom = null;
         }
       };
 

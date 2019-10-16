@@ -52,8 +52,36 @@
 			return $this->mysqli->query( $query );
 		}
 
+		public function multi_query( $query ) {
+			$this->_check_db_selected();
+
+			return $this->mysqli->multi_query( $query );
+		}
+
 		public function table_exists( $table_name ) {
 			return $this->query( "SHOW TABLES LIKE $table_name" );
+		}
+
+		public function next_result() {
+			$this->mysqli->next_result();
+		}
+
+		public function get_columns( $table_name ) {
+			$this->_check_db_selected();
+
+			$sql = "SHOW COLUMNS FROM `$table_name`";
+
+			$result = $this->query( $sql );
+
+			$columns = $result->fetch_all( MYSQLI_ASSOC );
+
+			if ( $columns ) {
+				return array_map( function ( $column ) {
+					return $column["Field"];
+				}, $columns );
+			} else {
+				return [];
+			}
 		}
 
 		private function _check_db_selected() {

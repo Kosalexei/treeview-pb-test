@@ -95,14 +95,14 @@
 			}
 
 			try {
-				$id        = $formData["id"];
-				$parent_id = $formData["parent_id"];
-				$name      = $formData["name"];
-				$type      = $formData["type"];
-				$target    = $formData["target"];
+				$ids            = $formData["ids"];
+				$current_dir_ID = isset( $formData["currentDirID"] ) ? $formData["currentDirID"] : 0;
+				$modified       = $formData["modified"];
+				$target         = $formData["target"];
+				$fields         = $formData["fields"];
 
-				if ( $treeview->update( $id, $name, $type, $target ) ) {
-					RequestSender::success( $treeview->get_node( $parent_id ) );
+				if ( $treeview->update( $ids, $fields, $formData, $modified, $target ) ) {
+					RequestSender::success( $treeview->get_node( $current_dir_ID ) );
 				} else {
 					throw new Exception( "Не удалось обновить элемент." );
 				}

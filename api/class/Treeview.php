@@ -17,25 +17,20 @@
 
 			$_description = $description ? "'$description'" : "NULL";
 
-			$sql = "INSERT INTO `$table_name` (`ID`, `Name`, `Created`, `Modified`, `Description`, `ParentID`) VALUES (NULL, '$name', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, $_description, '$parent_id')";
+			$sql = "INSERT INTO `$table_name` (`ID`, `Name`, `Created`, `Modified`, `Description`, `ParentID`) VALUES (NULL, '$name', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, $_description, '$parent_id');";
 
 			return $this->db->query( $sql );
-
-			if ( $this->db->query( $sql ) === true ) {
-				return $this->getNode( $parent_id );
-			} else {
-				throw new Exception( "Не удалось добавить директорию." );
-			}
 		}
 
 		public function get_directories( $id ) {
 			try {
 				$table_name = $this->directories_table_name;
 
-				$sql = "SELECT * from `$table_name` WHERE `ParentID` = $id";
+				$sql = "SELECT * from `$table_name` WHERE `ParentID` = $id;";
 
 				$result = $this->db->query( $sql );
-
+//				var_dump($sql);
+//				exit;
 				return $result->fetch_all( MYSQLI_ASSOC );
 			} catch ( Exception $e ) {
 				throw new Exception( $e );
@@ -47,7 +42,7 @@
 
 				$table_name = $this->elements_table_name;
 
-				$sql = "SELECT * from `$table_name` WHERE `DirectoryID` = $id";
+				$sql = "SELECT * from `$table_name` WHERE `DirectoryID` = $id;";
 
 				$result = $this->db->query( $sql );
 
@@ -67,7 +62,7 @@
 
 			$ids = $this->_prepare_ids( $ids );
 
-			$sql = "DELETE FROM `$table_name` WHERE (ID) IN ($ids) OR (ParentID) IN ($ids)";
+			$sql = "DELETE FROM `$table_name` WHERE (ID) IN ($ids) OR (ParentID) IN ($ids);";
 
 			return $this->db->query( $sql );
 		}
@@ -82,7 +77,7 @@
 
 			$ids = $this->_prepare_ids( $ids );
 
-			$sql = "DELETE FROM `$table_name` WHERE (ID) IN ($ids)";
+			$sql = "DELETE FROM `$table_name` WHERE (ID) IN ($ids);";
 
 			return $this->db->query( $sql );
 		}
@@ -91,21 +86,16 @@
 			$this->_check_db();
 			$table_name = $this->elements_table_name;
 
-			$sql = "INSERT INTO `$table_name` (`ID`, `DirectoryID`, `Name`, `Created`, `Modified`, `Type`, `Meta`) VALUES (NULL, '$dir_id', '$name', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, '$type', NULL)";
+			$sql = "INSERT INTO `$table_name` (`ID`, `DirectoryID`, `Name`, `Created`, `Modified`, `Type`, `Meta`) VALUES (NULL, '$dir_id', '$name', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, '$type', NULL);";
 
 			return $this->db->query( $sql );
-			if ( $this->db->query( $sql ) === true ) {
-				return $this->get_directories( $parent_id );
-			} else {
-				throw new Exception( "Не удалось добавить элемент." );
-			}
 		}
 
 		public function get_types() {
 			$this->_check_db();
 			$table_name = $this->types_table_name;
 
-			$sql = "SELECT * from `$table_name`";
+			$sql = "SELECT * from `$table_name`;";
 
 			$result = $this->db->query( $sql );
 
@@ -120,14 +110,37 @@
 			];
 		}
 
-		public function update( $id, $name, $type, $target = "directory" ) {
+		public function update( $ids, $fields, $data, $modified = true, $target = "directory" ) {
 			$this->_check_db();
 			$table_name = $target === "directory" ? $this->directories_table_name : $this->elements_table_name;
 
-			$type_sql = $type !== null ? ", `Type`='$type'" : "";
-			$sql      = "UPDATE `$table_name` SET `Name`='$name', `Modified`=CURRENT_TIMESTAMP $type_sql WHERE ID = $id";
+			$sql_fields_array = [];
 
-			return $this->db->query( $sql );
+			$columns = $this->db->get_columns( $table_name );
+
+			foreach ( $fields as $field ) {
+				if ( isset( $data[ $field ] ) && in_array( $field, $columns ) ) {
+					array_push( $sql_fields_array, "`$field`='$data[$field]'" );
+				}
+			}
+
+			if ( $modified ) {
+				array_push( $sql_fields_array, "`Modified`=CURRENT_TIMESTAMP" );
+			}
+
+			$sql_fields = join( ", ", $sql_fields_array );
+
+			$sql = "";
+
+			foreach ( $ids as $id ) {
+				$sql .= "UPDATE `$table_name` SET $sql_fields WHERE `ID` = $id;";
+			}
+
+			$result = $this->db->multi_query( $sql );
+
+			while ($this->db->next_result());
+
+			return $result;
 		}
 
 		private function _check_db() {

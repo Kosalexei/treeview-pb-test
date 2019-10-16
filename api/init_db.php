@@ -1,7 +1,7 @@
 <?php
 
 	function init_db() {
-    $db = Database::getInstance();
+		$db = Database::getInstance();
 		$db->init( getenv( "DB_HOST" ), getenv( "DB_USER" ), getenv( "DB_PASSWORD" ) );
 		$db->select_db( getenv( "DB_NAME" ) );
 

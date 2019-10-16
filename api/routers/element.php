@@ -29,12 +29,12 @@
 				$element_type = $formData["element_type"];
 
 				if ( $element_name && (int) $dir_id >= 0 ) {
-					if($treeview->add_element( $dir_id, $element_name, $element_type )) {
-						RequestSender::success( $treeview->get_node($dir_id) );
+					if ( $treeview->add_element( $dir_id, $element_name, $element_type ) ) {
+						RequestSender::success( $treeview->get_node( $dir_id ) );
 					} else {
 						return new Exception( "Не удалось добавить элемент." );
 					}
-					
+
 				}
 			} catch ( Exception $e ) {
 				RequestSender::error( $e->getMessage() );

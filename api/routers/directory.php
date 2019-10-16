@@ -11,7 +11,7 @@
 			return;
 		}
 
-    $db = Database::getInstance();
+		$db = Database::getInstance();
 
 		$treeview = new Treeview( $db );
 
@@ -28,8 +28,8 @@
 				$dir_description = $formData["dir_description"];
 
 				if ( $dir_name && (int) $parent_id >= 0 ) {
-					if($treeview->add_directory( $parent_id, $dir_name, $dir_description )) {
-						RequestSender::success( $treeview->get_node($parent_id) );
+					if ( $treeview->add_directory( $parent_id, $dir_name, $dir_description ) ) {
+						RequestSender::success( $treeview->get_node( $parent_id ) );
 					} else {
 						throw new Exception( "Не удалось добавить директорию." );
 					}
@@ -52,7 +52,7 @@
 				$parent_id = isset( $formData["parent_id"] ) ? $formData["parent_id"] : 0;
 
 				if ( (int) $parent_id >= 0 ) {
-					RequestSender::success( $treeview->get_node($parent_id) );
+					RequestSender::success( $treeview->get_node( $parent_id ) );
 				}
 			} catch ( Exception $e ) {
 				RequestSender::error( $e->getMessage() );
@@ -69,14 +69,14 @@
 			}
 
 			try {
-				$ids = $formData["ids"];
+				$ids       = $formData["ids"];
 				$parent_id = $formData["parent_id"];
 
-				$directories = isset($ids["directory"]) ? $ids["directory"] : [];
-				$elements = isset($ids["element"]) ? $ids["element"] : [];
+				$directories = isset( $ids["directory"] ) ? $ids["directory"] : [];
+				$elements    = isset( $ids["element"] ) ? $ids["element"] : [];
 
-				if ($treeview->delete_directories( $directories ) === true && $treeview->delete_elements( $elements ) === true) {
-					RequestSender::success( $treeview->get_node($parent_id) );
+				if ( $treeview->delete_directories( $directories ) === true && $treeview->delete_elements( $elements ) === true ) {
+					RequestSender::success( $treeview->get_node( $parent_id ) );
 				} else {
 					throw new Exception( "Не удалось удалить директорию." );
 				}
@@ -85,24 +85,24 @@
 			}
 
 			return;
-    }
-    
-    // Обновить элемент
-		// POST /directory
+		}
+
+		// Обновить элемент
+		// UPDATE /directory
 		if ( $method === 'UPDATE' && empty( $urlData ) ) {
 			if ( ! $formData ) {
 				return;
-      }
+			}
 
 			try {
-        $id        = $formData["id"];
-        $parent_id = $formData["parent_id"];
-				$name       = $formData["name"];
-        $type = $formData["type"];
-        $target = $formData["target"];
+				$id        = $formData["id"];
+				$parent_id = $formData["parent_id"];
+				$name      = $formData["name"];
+				$type      = $formData["type"];
+				$target    = $formData["target"];
 
-				if($treeview->update( $id, $name, $type, $target )) {
-					RequestSender::success( $treeview->get_node($parent_id) );
+				if ( $treeview->update( $id, $name, $type, $target ) ) {
+					RequestSender::success( $treeview->get_node( $parent_id ) );
 				} else {
 					throw new Exception( "Не удалось обновить элемент." );
 				}

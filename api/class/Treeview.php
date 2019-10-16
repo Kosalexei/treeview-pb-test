@@ -29,36 +29,36 @@
 		}
 
 		public function get_directories( $id ) {
-      try {
-        $table_name = $this->directories_table_name;
+			try {
+				$table_name = $this->directories_table_name;
 
-        $sql = "SELECT * from `$table_name` WHERE `ParentID` = $id";
+				$sql = "SELECT * from `$table_name` WHERE `ParentID` = $id";
 
-        $result = $this->db->query( $sql );
- 
-        return $result->fetch_all(MYSQLI_ASSOC);
-      } catch(Exception $e) {
-        throw new Exception($e);
-      }
+				$result = $this->db->query( $sql );
+
+				return $result->fetch_all( MYSQLI_ASSOC );
+			} catch ( Exception $e ) {
+				throw new Exception( $e );
+			}
 		}
 
 		public function get_elements( $id ) {
-      try {
+			try {
 
-			$table_name = $this->elements_table_name;
+				$table_name = $this->elements_table_name;
 
-			$sql = "SELECT * from `$table_name` WHERE `DirectoryID` = $id";
+				$sql = "SELECT * from `$table_name` WHERE `DirectoryID` = $id";
 
-			$result = $this->db->query( $sql );
+				$result = $this->db->query( $sql );
 
-      return $result->fetch_all(MYSQLI_ASSOC);
-    } catch(Exception $e) {
-      throw new Exception($e);
-    }
+				return $result->fetch_all( MYSQLI_ASSOC );
+			} catch ( Exception $e ) {
+				throw new Exception( $e );
+			}
 		}
 
 		public function delete_directories( $ids ) {
-			if ( count($ids) === 0 ) {
+			if ( count( $ids ) === 0 ) {
 				return true;
 			}
 
@@ -73,7 +73,7 @@
 		}
 
 		public function delete_elements( $ids ) {
-			if ( count($ids) === 0 ) {
+			if ( count( $ids ) === 0 ) {
 				return true;
 			}
 
@@ -109,26 +109,26 @@
 
 			$result = $this->db->query( $sql );
 
-			return $result->fetch_all(MYSQLI_ASSOC);
+			return $result->fetch_all( MYSQLI_ASSOC );
 		}
 
-		public function get_node($id) {
+		public function get_node( $id ) {
 			return [
-				"dirId" => $id,
+				"dirId"       => $id,
 				"directories" => $this->get_directories( $id ),
-				"elements" => $this->get_elements( $id )
+				"elements"    => $this->get_elements( $id )
 			];
-    }
-    
-    public function update($id, $name, $type, $target = "directory") {
+		}
+
+		public function update( $id, $name, $type, $target = "directory" ) {
 			$this->_check_db();
-      $table_name = $target === "directory" ?  $this->directories_table_name : $this->elements_table_name;
+			$table_name = $target === "directory" ? $this->directories_table_name : $this->elements_table_name;
 
-      $type_sql = $type !== null ? ", `Type`='$type'" : "";
-			$sql = "UPDATE `$table_name` SET `Name`='$name', `Modified`=CURRENT_TIMESTAMP $type_sql WHERE ID = $id";
+			$type_sql = $type !== null ? ", `Type`='$type'" : "";
+			$sql      = "UPDATE `$table_name` SET `Name`='$name', `Modified`=CURRENT_TIMESTAMP $type_sql WHERE ID = $id";
 
-      return $this->db->query( $sql );
-    }
+			return $this->db->query( $sql );
+		}
 
 		private function _check_db() {
 			if ( ! $this->db ) {
@@ -137,10 +137,10 @@
 		}
 
 		private function _prepare_ids( $ids ) {
-			$ids = array_map(function( $id ) {
+			$ids = array_map( function ( $id ) {
 				return "(" . $id . ")";
-			}, $ids);
+			}, $ids );
 
-			return join(",", $ids);
+			return join( ",", $ids );
 		}
 	}

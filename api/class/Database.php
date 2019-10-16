@@ -2,20 +2,22 @@
 
 	class Database {
 		private $mysqli;
-    public $dbname = "";
-    private static $instance = null;
+		public $dbname = "";
+		private static $instance = null;
 
-    public static function getInstance()
-    {
-        if (null === self::$instance)
-        {
-            self::$instance = new self();
-        }
-        return self::$instance;
-    }
+		public static function getInstance() {
+			if ( null === self::$instance ) {
+				self::$instance = new self();
+			}
 
-    private function __clone() {}
-    private function __construct() {}
+			return self::$instance;
+		}
+
+		private function __clone() {
+		}
+
+		private function __construct() {
+		}
 
 		public function init( $host, $user, $password ) {
 			$this->mysqli = new mysqli( $host, $user, $password );

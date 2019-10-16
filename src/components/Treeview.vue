@@ -80,7 +80,8 @@
           :class="{'selected': selectedID.includes(element.advancedId), 'want-move': wantMove.includes(element.advancedId)}"
         >
           <td v-for="(header, dIndex) in headers" :key="dIndex">
-            <div class="td-name" v-if="header.value === 'Name'">
+            <span v-if="header.date">{{header.value ? moment(element[header.value]) : null}}</span>
+            <div class="td-name" v-else-if="header.value === 'Name'">
               <i class="icon icon--left mdi" :class="getIcon(element.Type)"></i>
               <span>{{header.value ? element[header.value] : null}}</span>
             </div>

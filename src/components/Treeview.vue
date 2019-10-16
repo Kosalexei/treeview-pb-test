@@ -42,6 +42,7 @@
           </th>
         </tr>
       </thead>
+
       <tbody class="treeview__table-body">
         <tr class="comeback" v-if="parseInt(dirID) !== 0" @dblclick="getDirectory(parentID)">
           <td :colspan="headers.length">
@@ -51,6 +52,7 @@
             </div>
           </td>
         </tr>
+
         <tr
           v-for="(directory, rIndex) in directories"
           :key="`${rIndex}-directory`"
@@ -126,28 +128,64 @@ export default {
   components: { AddDirectoryModal, AddElementModal, EditModal },
 
   data: () => ({
+    /**
+     * Отображать ли модальное окно создания директории.
+     */
     addDirectoryModal: false,
 
+    /**
+     * Отображать ли модальное окно создания элемнта.
+     */
     addElementModal: false,
 
+    /**
+     * Отображать ли модальное окно редактирования объектов.
+     */
     editModal: false,
 
+    /**
+     * Идентификатор текущей директории.
+     */
     dirID: 0,
 
+    /**
+     * Идентификатор родительской директории.
+     */
     parentID: 0,
 
+    /**
+     * Массив идентификаторов выбранных объектов.
+     */
     selectedID: [],
 
+    /**
+     * Массив идентификаторов объектов, которые будут перемещены.
+     */
     wantMove: [],
 
+    /**
+     * Идентификатор директории откуда перемещаем объекты.
+     */
     moveFrom: null,
 
+    /**
+     * Определение, что клавиша CTRL нажата.
+     */
     ctrlPressed: false,
 
+    /**
+     * По какому полю сортировать.
+     */
     sortBy: null,
 
+    /**
+     * Порядок сортировки.
+     */
     order: "DESC",
 
+    /**
+     * Заголовки таблицы.
+     */
     headers: [
       {
         label: "Наименование",
@@ -169,10 +207,19 @@ export default {
       }
     ],
 
+    /**
+     * Массив дочерних директорий.
+     */
     directories: [],
 
+    /**
+     * Массив дочерних элементов.
+     */
     elements: [],
 
+    /**
+     * Массив типов записей.
+     */
     types: []
   }),
 
@@ -197,52 +244,76 @@ export default {
   },
 
   watch: {
+    /**
+     * Следим открыто ли модальное окно добавления директории.
+     */
     addDirectoryModal(value) {
       if (value) {
+        // Убираем события.
         this.unsetEvents();
       } else {
+        // Добавляем события.
         this.setEvents();
-        this.dirName = "";
       }
     },
 
+    /**
+     * Следим открыто ли модальное окно добавления элемента.
+     */
     addElementModal(value) {
       if (value && this.types.length === 0) {
+        // Получаем типы записей
         this.getTypes();
       }
 
       if (value) {
+        // Убираем события.
         this.unsetEvents();
       } else {
+        // Добавляем события.
         this.setEvents();
       }
     },
 
+    /**
+     * Следим открыто ли модальное окно редактирования объекта.
+     */
     editModal(value) {
       if (value && this.types.length === 0) {
+        // Получаем типы записей
         this.getTypes();
       }
 
       if (value) {
+        // Убираем события.
         this.unsetEvents();
       } else {
+        // Добавляем события.
         this.setEvents();
       }
     }
   },
 
   mounted() {
+    // Получаем директории
     this.getDirectory(this.dirID);
+
+    // Получаем типы записей
     this.getTypes();
 
+    // Добавляем события.
     this.setEvents();
   },
 
   beforeDestroy() {
+    // Убираем события.
     this.unsetEvents();
   },
 
   methods: {
+    /**
+     * Добавление директории.
+     */
     addDirectory({ dirName, dirDescription }) {
       const data = {
         dir_name: dirName,
@@ -262,6 +333,9 @@ export default {
         });
     },
 
+    /**
+     * Получение дочерних элементов.
+     */
     getDirectory(id, prarentID) {
       const params = { parent_id: id };
       this.parentID = prarentID;
@@ -279,7 +353,11 @@ export default {
         });
     },
 
+    /**
+     * Удаление объектов.
+     */
     deleteItems(parent_id) {
+      // Получаем идентификаторы выбранных объектов. Отдельно директории и элементы.
       const idsAdvanced = this.parseIdsAdvanced(this.selectedID);
       const data = { ids: idsAdvanced, parent_id };
 
@@ -299,6 +377,9 @@ export default {
         });
     },
 
+    /**
+     * Добавить элемент.
+     */
     addElement({ elementName, elementType }) {
       const data = {
         element_name: elementName,
@@ -318,6 +399,9 @@ export default {
         });
     },
 
+    /**
+     * Обновить объект.
+     */
     updateItem(item) {
       const data = {
         ids: [item.ID],
@@ -345,7 +429,10 @@ export default {
         });
     },
 
-    moveItem(fromId, ids, toId, target) {
+    /**
+     * Перемещение объектов.
+     */
+    moveItems(fromId, ids, toId, target) {
       const data = {
         ids: ids,
         currentDirID: toId,
@@ -368,6 +455,9 @@ export default {
         });
     },
 
+    /**
+     * Перемещение и директорий и элементов.
+     */
     moveAll() {
       if (this.wantMove.length === 0 || this.moveFrom === null) return;
 
@@ -376,13 +466,17 @@ export default {
         return;
       }
 
+      // Получаем идентификаторы объектов, которые можно переместить. Отдельно директории и элементы.
       const idsAdvanced = this.parseIdsAdvanced(this.wantMove);
 
       for (let target in idsAdvanced) {
-        this.moveItem(this.moveFrom, idsAdvanced[target], this.dirID, target);
+        this.moveItems(this.moveFrom, idsAdvanced[target], this.dirID, target);
       }
     },
 
+    /**
+     * Получаем типы записей.
+     */
     getTypes() {
       this.$http({ method: "get", url: "/types" })
         .then(({ data }) => {
@@ -396,6 +490,9 @@ export default {
         });
     },
 
+    /**
+     * Выбираем строку из таблицы при клике на нее.
+     */
     selectRow(id) {
       if (!this.ctrlPressed) this.selectedID = [id];
       else {
@@ -409,6 +506,9 @@ export default {
       }
     },
 
+    /**
+     * Добавлем тип объектам, у которых его нет.
+     */
     fixTypes(items) {
       items.forEach(item => {
         if (!item.hasOwnProperty("Type")) {
@@ -417,10 +517,16 @@ export default {
       });
     },
 
+    /**
+     * Получить тип объекта.
+     */
     getType(id) {
       return find(this.types, type => type.ID === id);
     },
 
+    /**
+     * Получить иконку объекта.
+     */
     getIcon(id) {
       let icon = "";
 
@@ -444,6 +550,10 @@ export default {
       return icon;
     },
 
+    /**
+     * Задает дополнительный идентификатор. Основной может дублироваться между директориями и элементами.
+     * И так легче отличить директорию от элемента.
+     */
     addAdvancedIds(items, postfix) {
       items.forEach(item => {
         if (!item.hasOwnProperty("advancedId")) {
@@ -452,6 +562,9 @@ export default {
       });
     },
 
+    /**
+     * Обновление данных после взаимодействия с сервером.
+     */
     updateData(data) {
       this.directories = data.directories;
       this.elements = data.elements;
@@ -461,6 +574,9 @@ export default {
       this.sortAll();
     },
 
+    /**
+     * Задает порядок сортировки.
+     */
     setSort(value) {
       if (this.sortBy === value) {
         this.order = this.order === "DESC" ? "ASC" : "DESC";
@@ -472,6 +588,9 @@ export default {
       this.sortAll();
     },
 
+    /**
+     * Сортирует все данные.
+     */
     sortAll() {
       if (this.sortBy) {
         this.sortItems(this.directories, this.sortBy, this.order);
@@ -479,6 +598,9 @@ export default {
       }
     },
 
+    /**
+     * Сортирует определенные данные.
+     */
     sortItems(items, sortBy, order) {
       items.sort((a, b) => {
         // Удаляем реактивность
@@ -490,26 +612,21 @@ export default {
           b[sortBy] = b[sortBy].toUpperCase();
         }
 
-        if (order === "ASC") {
-          if (a[sortBy] < b[sortBy]) {
-            return -1;
-          }
-          if (a[sortBy] > b[sortBy]) {
-            return 1;
-          }
-        } else {
-          if (b[sortBy] < a[sortBy]) {
-            return -1;
-          }
-          if (b[sortBy] > a[sortBy]) {
-            return 1;
-          }
+        if (a[sortBy] < b[sortBy]) {
+          return order === "ASC" ? -1 : 1;
+        }
+
+        if (a[sortBy] > b[sortBy]) {
+          return order === "ASC" ? 1 : -1;
         }
 
         return 0;
       });
     },
 
+    /**
+     * Добавляем идентификаторы объектов, которые можно будет перенести.
+     */
     addWantMove(items) {
       if (this.moveFrom === null) {
         this.moveFrom = this.dirID;
@@ -520,6 +637,7 @@ export default {
         this.moveFrom = this.dirID;
       }
 
+      // Ищем различия в массивах.
       const xorItems = xor(this.wantMove.concat(items), this.wantMove);
 
       this.wantMove = this.wantMove.concat(xorItems);
@@ -546,21 +664,29 @@ export default {
       return idsAdvanced;
     },
 
+    /**
+     * Форматируем дату.
+     */
     moment(value, format = "DD.MM.YYYY HH:mm") {
       return moment(value, "YYYY-MM-DD HH:mm").format(format);
     },
 
+    /**
+     * Добавляем события.
+     */
     setEvents() {
       document.onkeydown = e => {
         if (e.ctrlKey) {
           this.ctrlPressed = e.ctrlKey;
 
           if (e.keyCode === 88) {
+            // CTRL+X
             e.preventDefault();
             this.addWantMove(this.selectedID);
           }
 
           if (e.keyCode === 86) {
+            // CTRL+V
             e.preventDefault();
             this.moveAll();
           }
@@ -582,6 +708,9 @@ export default {
       };
     },
 
+    /**
+     * Удаляем события.
+     */
     unsetEvents() {
       document.onkeydown = undefined;
       document.onkeyup = undefined;

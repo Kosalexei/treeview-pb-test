@@ -1,4 +1,10 @@
-# treeview_pb-test
+# treeview-pb-test
+
+## База данных
+Настройки базы данных находятся в файле /api/.env. База данных и все таблицы создаются автоматически.
+
+## Backend
+Backend находится в папке api.
 
 ## Project setup
 ```
@@ -14,16 +20,3 @@ npm run serve
 ```
 npm run build
 ```
-
-### Run your tests
-```
-npm run test
-```
-
-### Lints and fixes files
-```
-npm run lint
-```
-
-### Customize configuration
-See [Configuration Reference](https://cli.vuejs.org/config/).
